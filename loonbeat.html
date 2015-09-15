@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<!-- saved from url=(0018)http://boop.space/ -->
+<html>
+    <head>
+        <meta charset="utf-8">
+    	<title>a copper for a bump</title>
+        <style>
+            body, html {
+                margin: 0;
+                height: 100%;
+            }
+            #container{
+                background-color: #000;
+                -webkit-filter: saturate(200%);
+                filter: saturate(200%);
+                height: 100%;
+                width: 100%;
+            }
+            #loon {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%,-50%) scale(0.98);
+                border-radius: 50%;
+                cursor: pointer;
+                -webkit-filter: contrast(200%);
+                filter: contrast(200%);
+                max-height: 80%;
+            }
+            .pulsating{
+                animation: pulsate linear infinite paused;
+            }
+            #options{
+                position: absolute;
+                padding: 25px;
+                bottom: 0;
+                left: 0;
+                background: transparent;
+                color: #AAA;
+                height: 300px;
+                width: 300px;
+            }
+            #options > *{
+                display: none;
+            }
+            button{
+                background: inherit;
+                color: inherit;
+                border: 1px solid #AAA;
+            }
+            input{
+                background: inherit;
+                border: none;
+                color: inherit;
+                width: 100%;
+            }
+
+            @keyframes pulsate {
+                5% {
+                    transform: translate(-50%,-50%) scale(1);
+                    -webkit-filter: contrast(200%) blur(5px);
+                    filter: contrast(200%) blur(5px);
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container">
+            <img class="pulsating" id="loon" alt="loon" />
+        </div>
+        <div id="options">
+            <form>
+                <label>Image: <input type="text" id="inputImage"/></label>
+                <br/>
+                <label>Audio: <input type="text" id="inputAudio"/></label>
+                <br/>
+                <label>Animation Duration: <input type="text" id="inputDuration"/></label>
+                <br/>
+                <button>Apply</button>
+            </form>
+        </div>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+        <script>
+        var audio = new Audio();
+        var loon = document.getElementById("loon");
+        var hue = 0;
+        var initiated = false;
+        var hashVars = getUrlVars();
+        var defaults = {
+            i : "loon.png",
+            a : "Trentemoller - Moan.ogg",
+            d : "0.5s"
+        };
+
+        function initiate(){
+            var newHashVars = getUrlVars();
+
+            if(newHashVars !== hashVars && initiated)
+            {
+                initiated = false;
+                hashVars = newHashVars;
+            }
+
+            if(initiated)
+                return;
+
+            initiated = true;
+
+            var duration = defaults.d;
+            var image = defaults.i;
+            var audiosrc = defaults.a;
+
+            if(hashVars.d)
+                duration = hashVars.d;
+            if(hashVars.i)
+                image = hashVars.i;
+            if(hashVars.a)
+                audiosrc = hashVars.a;
+            
+            var tempaudio = new Audio(audiosrc);
+            if(audio.src !== tempaudio.src)
+            {
+                audio.pause();
+                audio = new Audio(audiosrc);
+                audio.load();
+                audio.loop = true;
+                audio.play();
+                $(audio).on("canplaythrough", function(){
+                    $(loon).toggleClass("pulsating");
+                    loon.offsetWidth = loon.offsetWidth;
+                    $(loon).toggleClass("pulsating");
+                    loon.style.webkitAnimationPlayState = "running";
+                    loon.style.animationPlayState = "running";
+                });
+            }
+            $(tempaudio).remove();
+            loon.src = image;
+
+            loon.style.webkitAnimationDuration = duration;
+            loon.style.animationDuration = duration;
+
+            document.getElementById("inputImage").value = image;
+            document.getElementById("inputAudio").value = audiosrc;
+            document.getElementById("inputDuration").value = duration;
+        }
+        loon.addEventListener("click",function() {
+            if(!audio.paused) {
+                console.log("%cPausing bumps", "background: none; color: #3333FF");
+                audio.pause();
+                loon.style.webkitAnimationPlayState = "paused";
+                loon.style.animationPlayState = "paused";
+            }
+            else {
+                console.log("%cResuming bumps", "background: none; color: #3333FF");
+                audio.play();
+                loon.style.webkitAnimationPlayState = "running";
+                loon.style.animationPlayState = "running";
+            }
+        });
+        loon.addEventListener("animationiteration", function(){
+            //240 instead of 360 and +60 makes it so that the hue will at least
+            //change by 60 degrees, it makes it look better because the hue will
+            //always noticably change every beat
+            //240+60 = 300 = -60, 0+60 = 60
+            hueChange = Math.floor(Math.random()*240);
+            hue += 60+hueChange;
+            //remove 360s cause they do nothing
+            while (hue > 360){
+                hue -= 360;
+            }
+            document.getElementsByTagName("body")[0].style.webkitFilter = "hue-rotate("+hue+"deg)";
+            document.getElementsByTagName("body")[0].style.filter = "hue-rotate("+hue+"deg)";
+        });
+        $("#options").hover(function(){
+            $("#options>*").fadeIn();
+        }, function(){
+            $("#options>*").fadeOut();
+        });
+
+        $("form").submit(function(e) {
+            e.preventDefault();
+            var i = document.getElementById("inputImage").value;
+            var a = document.getElementById("inputAudio").value;
+            var d = document.getElementById("inputDuration").value;
+            var newhash = "#";
+            newhash += "i="+i;
+            newhash += "&a="+a;
+            newhash += "&d="+d;
+            window.location.hash = newhash;
+            initiate();
+        });
+
+        function getUrlVars() {
+            var vars = {};
+            window.location.href.replace(/[#&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+                vars[key] = value;
+            });
+            return vars;
+        }
+
+        initiate();
+        </script>
+    </body>
+</html>
